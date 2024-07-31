@@ -1,5 +1,6 @@
+// vars/k8sAgent.groovy
 def call() {
-    return """
+    return '''
     apiVersion: v1
     kind: Pod
     metadata:
@@ -29,5 +30,5 @@ def call() {
             path: config.json
       - name: workspace-volume
         emptyDir: {}
-    """.stripIndent()
+    '''
 }
