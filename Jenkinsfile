@@ -74,9 +74,9 @@ pipeline {
                     script {
                         sh '''
                         cd netflix-clone
-                        /kaniko/executor --dockerfile=${WORKSPACE}/your-repo/Dockerfile \
-                                         --context=${WORKSPACE}/your-repo \
-                                         --destination=${DOCKERHUB_REPO}:${IMAGE_TAG}-${BUILD_TAG}
+                        /kaniko/executor --dockerfile=./Dockerfile \
+                                         --context=. \
+                                         --destination=${env.DOCKERHUB_REPO}:${IMAGE_TAG}-${BUILD_TAG}
                         '''
                     }
                 }
