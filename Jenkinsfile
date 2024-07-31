@@ -39,15 +39,18 @@ pipeline {
         GITHUB_TOKEN = credentials('github-token1') // Jenkins credentials ID for GitHub token
         IMAGE_TAG = 'unode-onboard-api' // Image tag, can be changed if needed
         BUILD_TAG = "${env.BUILD_ID}" // Unique tag for each build
+        SOURCE_BRANCH = "${env.CHANGE_BRANCH ?: env.GIT_BRANCH}"
     }
     stages {
         stage('Clone Repository') {
             steps {
                 script {
-                    sh '''
-                    git clone -b feat-nodes-failed-test https://${GITHUB_TOKEN}@github.com/unification-com/unode-onboard-api.git
-                    cd unode-onboard-api
-                    '''
+                    sh """
+                    echo "Cloning branch: ${env.SOURCE_BRANCH}"
+                    git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
+                    cd netflix-clone
+
+                    """
                 }
             }
         }
@@ -56,11 +59,10 @@ pipeline {
                 container('kaniko') {
                     script {
                         sh '''
-                        cd unode-onboard-api
+                        cd netflix-clone
                         # Testing 
                         which go
                         go version
-                        go test -v ./...
                         '''
                     }
                 }
@@ -71,7 +73,7 @@ pipeline {
                 container('kaniko') {
                     script {
                         sh '''
-                        cd unode-onboard-api
+                        cd netflix-clone
                         /kaniko/executor --dockerfile=${WORKSPACE}/your-repo/Dockerfile \
                                          --context=${WORKSPACE}/your-repo \
                                          --destination=${DOCKERHUB_REPO}:${IMAGE_TAG}-${BUILD_TAG}
