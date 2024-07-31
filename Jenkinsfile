@@ -12,6 +12,7 @@ pipeline {
                     label 'k8s-agent'
                     defaultContainer 'jnlp'
                     yamlFile 'k8s-agent.yaml'
+                    logLevel 'INFO' // Set log level to INFO
                 }
             }
             stages {
