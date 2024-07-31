@@ -33,7 +33,7 @@ pipeline {
               - name: workspace-volume
                 emptyDir: {}
             '''
-            loglevel 'ERROR'
+            logLevel 'WARN'
         }
     }
     environment {
