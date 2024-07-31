@@ -40,6 +40,7 @@ pipeline {
         IMAGE_TAG = 'unode-onboard-api' // Image tag, can be changed if needed
         BUILD_TAG = "${env.BUILD_ID}" // Unique tag for each build
         SOURCE_BRANCH = "${env.CHANGE_BRANCH ?: env.GIT_BRANCH}"
+        DOCKERHUB_REPO = 'gaganr31/jenkins'
     }
     stages {
         stage('Clone Repository') {
