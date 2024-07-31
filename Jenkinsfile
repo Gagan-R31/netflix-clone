@@ -2,7 +2,7 @@ pipeline {
     agent {
         kubernetes {
             label 'k8s-agent'
-            yaml "${env.K8S_AGENT_YAML}"}
+            yaml "${env.K8S_AGENT_YAML}"
         }
     }
     environment {
@@ -52,9 +52,3 @@ pipeline {
         }
     }
 }
-
-
-
-
-
-
