@@ -16,6 +16,7 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "Cloning branch: ${env.SOURCE_BRANCH}"
                     git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
                     cd netflix-clone
                     '''
