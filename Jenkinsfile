@@ -4,7 +4,7 @@ pipeline {
         GITHUB_TOKEN = credentials('github-token') // Jenkins credentials ID for GitHub token
         IMAGE_TAG = 'unode-onboard-api' // Image tag, can be changed if needed
         BUILD_TAG = "${env.BUILD_ID}" // Unique tag for each build
-        K8S_AGENT_YAML = credentials('K8S_AGENT_YAML') // Kubernetes agent YAML configuration
+        K8S_AGENT_YAML = credentials('k8s-agent-yaml') // Kubernetes agent YAML configuration
     }
     stages {
         stage('Run on Kubernetes Agent') {
