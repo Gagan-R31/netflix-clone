@@ -42,7 +42,7 @@ pipeline {
         DOCKERHUB_REPO = 'gaganr31/jenkins'
     }
     stages {
-        stage('Clone Repository') {
+        stage('Clone Repository and Get Commit SHA') {
             steps {
                 script {
                     sh """
@@ -50,6 +50,8 @@ pipeline {
                     git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
                     cd netflix-clone
                     """
+                    env.COMMIT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    echo "Commit SHA: ${env.COMMIT_SHA}"
                 }
             }
         }
@@ -70,15 +72,11 @@ pipeline {
             steps {
                 container('kaniko') {
                     script {
-                        // Get the commit SHA
-                        def commitSha = sh(script: "cd netflix-clone && git rev-parse --short HEAD", returnStdout: true).trim()
-                        
-                        // Build and push the image
                         sh """
                             cd netflix-clone
                             /kaniko/executor --dockerfile=./Dockerfile \
                                              --context=. \
-                                             --destination=${DOCKERHUB_REPO}:${IMAGE_TAG}-${commitSha}
+                                             --destination=${DOCKERHUB_REPO}:${IMAGE_TAG}-${env.COMMIT_SHA}
                         """
                     }
                 }
