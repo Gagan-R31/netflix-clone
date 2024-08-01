@@ -36,7 +36,7 @@ pipeline {
         }
     }
     environment {
-        GITHUB_TOKEN = credentials('github-token') // Jenkins credentials ID for GitHub token
+        GITHUB_TOKEN = credentials('github-token1') // Jenkins credentials ID for GitHub token
         IMAGE_TAG = 'unode-onboard-api' // Image tag, can be changed if needed
         BUILD_TAG = "${env.BUILD_ID}" // Unique tag for each build
     }
