@@ -1,47 +1,27 @@
 pipeline {
-    agent {
-        kubernetes {
-            label 'k8s-agent'
-            yaml '''
-            apiVersion: v1
-            kind: Pod
-            metadata:
-              labels:
-                some-label: some-label-value
-            spec:
-              containers:
-              - name: jnlp
-                image: jenkins/inbound-agent
-                args: ['$(JENKINS_SECRET)', '$(JENKINS_NAME)']
-              - name: kaniko
-                image: gaganr31/kaniko-go
-                command:
-                - /busybox/sh
-                tty: true
-                volumeMounts:
-                - name: kaniko-secret
-                  mountPath: /kaniko/.docker
-                - name: workspace-volume
-                  mountPath: /workspace
-              volumes:
-              - name: kaniko-secret
-                secret:
-                  secretName: kaniko-secret
-                  items:
-                  - key: .dockerconfigjson
-                    path: config.json
-              - name: workspace-volume
-                emptyDir: {}
-            '''
-        }
-    }
+    agent none
     environment {
         GITHUB_TOKEN = credentials('github-token1') // Jenkins credentials ID for GitHub token
         IMAGE_TAG = 'unode-onboard-api' // Image tag, can be changed if needed
         BUILD_TAG = "${env.BUILD_ID}" // Unique tag for each build
     }
     stages {
+        stage('Prepare Pod Config') {
+            agent any
+            steps {
+                withCredentials([string(credentialsId: 'k8s-pod-yaml', variable: 'POD_YAML')]) {
+                    writeFile file: 'pod-config.yaml', text: POD_YAML
+                }
+            }
+        }
         stage('Clone Repository') {
+            agent {
+                kubernetes {
+                    label 'k8s-agent'
+                    defaultContainer 'jnlp'
+                    yamlFile 'pod-config.yaml'
+                }
+            }
             steps {
                 script {
                     sh '''
@@ -52,6 +32,13 @@ pipeline {
             }
         }
         stage('Check Go Installation') {
+            agent {
+                kubernetes {
+                    label 'k8s-agent'
+                    defaultContainer 'kaniko'
+                    yamlFile 'pod-config.yaml'
+                }
+            }
             steps {
                 container('kaniko') {
                     script {
@@ -67,6 +54,13 @@ pipeline {
             }
         }
         stage('Build Docker Image with Kaniko') {
+            agent {
+                kubernetes {
+                    label 'k8s-agent'
+                    defaultContainer 'kaniko'
+                    yamlFile 'pod-config.yaml'
+                }
+            }
             steps {
                 container('kaniko') {
                     script {
