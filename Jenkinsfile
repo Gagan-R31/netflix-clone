@@ -45,8 +45,8 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    git clone -b feat-nodes-failed-test https://${GITHUB_TOKEN}@github.com/unification-com/unode-onboard-api.git
-                    cd unode-onboard-api
+                    git clone -b Test https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
+                    cd netflix-clone
                     '''
                 }
             }
@@ -56,7 +56,7 @@ pipeline {
                 container('kaniko') {
                     script {
                         sh '''
-                        cd unode-onboard-api
+                        cd netflix-clone
                         # Testing 
                         which go
                         go version
@@ -71,7 +71,7 @@ pipeline {
                 container('kaniko') {
                     script {
                         sh '''
-                        cd unode-onboard-api
+                        cd undode
                         /kaniko/executor --dockerfile=${WORKSPACE}/your-repo/Dockerfile \
                                          --context=${WORKSPACE}/your-repo \
                                          --destination=${DOCKERHUB_REPO}:${IMAGE_TAG}-${BUILD_TAG}
