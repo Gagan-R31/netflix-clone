@@ -74,7 +74,7 @@ pipeline {
                         cd undode
                         /kaniko/executor --dockerfile=${WORKSPACE}/your-repo/Dockerfile \
                                          --context=${WORKSPACE}/your-repo \
-                                         --destination=${DOCKERHUB_REPO}:${IMAGE_TAG}-${BUILD_TAG}
+                                         --no-push
                         '''
                     }
                 }
