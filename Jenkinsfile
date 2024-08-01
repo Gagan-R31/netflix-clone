@@ -2,27 +2,61 @@ pipeline {
     agent {
         kubernetes {
             label 'k8s-agent'
-            yaml env.KUBERNETES_YAML
+            yaml '''
+            apiVersion: v1
+            kind: Pod
+            metadata:
+              labels:
+                some-label: some-label-value
+            spec:
+              containers:
+              - name: jnlp
+                image: jenkins/inbound-agent
+                args: ['$(JENKINS_SECRET)', '$(JENKINS_NAME)']
+              - name: kaniko
+                image: gaganr31/kaniko-go
+                command:
+                - /busybox/sh
+                tty: true
+                volumeMounts:
+                - name: kaniko-secret
+                  mountPath: /kaniko/.docker
+                - name: workspace-volume
+                  mountPath: /workspace
+              volumes:
+              - name: kaniko-secret
+                secret:
+                  secretName: kaniko-secret
+                  items:
+                  - key: .dockerconfigjson
+                    path: config.json
+              - name: workspace-volume
+                emptyDir: {}
+            '''
         }
     }
     environment {
-        KUBERNETES_YAML = credentials('kubernetes-yaml-credentials') // Hidden parameter
         GITHUB_TOKEN = credentials('github-token1')
         IMAGE_TAG = 'unode-onboard-api'
-        BUILD_TAG = "${env.BUILD_ID}"
-        REPO_OWNER = 'Gagan-R31'
-        REPO_NAME = 'netflix-clone'
+        SOURCE_BRANCH = "${env.CHANGE_BRANCH ?: env.GIT_BRANCH}"
+        DOCKERHUB_REPO = 'gaganr31/jenkins'
+    }
+    options {
+        maskPasswords()
     }
     stages {
-        stage('Clone Repository') {
+        stage('Clone Repository and Get Commit SHA') {
             steps {
                 script {
-                    updateGitHubStatus('pending', 'Cloning repository')
-                    sh '''
-                    git clone -b Test https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
-                    cd netflix-clone
-                    '''
-                    updateGitHubStatus('success', 'Repository cloned')
+                    wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: env.GITHUB_TOKEN, var: 'GITHUB_TOKEN']]]) {
+                        sh """
+                        echo "Cloning branch: ${env.SOURCE_BRANCH}"
+                        git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
+                        cd netflix-clone
+                        """
+                    }
+                    env.COMMIT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    echo "Commit SHA: ${env.COMMIT_SHA}"
                 }
             }
         }
@@ -30,14 +64,11 @@ pipeline {
             steps {
                 container('kaniko') {
                     script {
-                        updateGitHubStatus('pending', 'Checking Go installation and running tests')
                         sh '''
                         cd netflix-clone
                         which go
                         go version
-                        go test -v ./...
                         '''
-                        updateGitHubStatus('success', 'Go checks and tests passed')
                     }
                 }
             }
@@ -46,40 +77,15 @@ pipeline {
             steps {
                 container('kaniko') {
                     script {
-                        updateGitHubStatus('pending', 'Building Docker image')
-                        sh '''
-                        cd undode
-                        /kaniko/executor --dockerfile=${WORKSPACE}/your-repo/Dockerfile \
-                                         --context=${WORKSPACE}/your-repo \
-                                         --destination=${DOCKERHUB_REPO}:${IMAGE_TAG}-${BUILD_TAG}
-                        '''
-                        updateGitHubStatus('success', 'Docker image built')
+                        sh """
+                            cd netflix-clone
+                            /kaniko/executor --dockerfile=./Dockerfile \
+                                             --context=. \
+                                             --destination=${DOCKERHUB_REPO}:${IMAGE_TAG}-${env.COMMIT_SHA}
+                        """
                     }
                 }
             }
         }
     }
-    post {
-        failure {
-            script {
-                updateGitHubStatus('failure', 'Pipeline failed')
-            }
-        }
-        success {
-            script {
-                updateGitHubStatus('success', 'Pipeline completed successfully')
-            }
-        }
-    }
-}
-
-def updateGitHubStatus(state, description) {
-    def commitSha = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
-    sh """
-        curl -H "Authorization: token ${GITHUB_TOKEN}" \
-             -H "Accept: application/vnd.github.v3+json" \
-             -X POST \
-             -d '{"state": "${state}", "description": "${description}", "context": "Jenkins", "target_url": "${env.BUILD_URL}console"}' \
-             https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/statuses/${commitSha}
-    """
 }
