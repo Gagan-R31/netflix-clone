@@ -1,5 +1,5 @@
 pipeline {
-    agent none
+    agent none // No default agent, we'll define it dynamically later
     environment {
         GITHUB_TOKEN = credentials('github-token1') // Jenkins credentials ID for GitHub token
         IMAGE_TAG = 'unode-onboard-api' // Image tag, can be changed if needed
@@ -7,7 +7,7 @@ pipeline {
     }
     stages {
         stage('Prepare Pod Config') {
-            agent any
+            agent { label 'master' } // Run this stage on the master node
             steps {
                 withCredentials([string(credentialsId: 'k8s-pod-yaml', variable: 'POD_YAML')]) {
                     writeFile file: 'pod-config.yaml', text: POD_YAML
