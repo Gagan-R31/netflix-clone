@@ -1,10 +1,8 @@
-@Library('shared-library') _
-
 pipeline {
     agent {
         kubernetes {
             label 'k8s-agent'
-            yaml k8sAgent()
+            yamlFile 'pod-config.yaml'
         }
     }
     environment {
@@ -14,6 +12,15 @@ pipeline {
         DOCKERHUB_REPO = 'gaganr31/jenkins'
     }
     stages {
+        stage('Create Pod Config') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'k8s-pod-yaml', variable: 'POD_YAML')]) {
+                        writeFile file: 'pod-config.yaml', text: POD_YAML
+                    }
+                }
+            }
+        }
         stage('Clone Repository and Get Commit SHA') {
             steps {
                 script {
