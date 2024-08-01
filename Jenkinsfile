@@ -1,5 +1,5 @@
 pipeline {
-    agent none // No default agent, we'll define it dynamically later
+    agent none // Define agents within stages
     environment {
         GITHUB_TOKEN = credentials('github-token1') // Jenkins credentials ID for GitHub token
         IMAGE_TAG = 'unode-onboard-api' // Image tag, can be changed if needed
@@ -7,10 +7,13 @@ pipeline {
     }
     stages {
         stage('Prepare Pod Config') {
-            agent { label 'master' } // Run this stage on the master node
+            agent any // This stage can run on any available node
             steps {
-                withCredentials([string(credentialsId: 'k8s-pod-yaml', variable: 'POD_YAML')]) {
-                    writeFile file: 'pod-config.yaml', text: POD_YAML
+                script {
+                    // Load YAML from Jenkins secret and write to a file
+                    withCredentials([string(credentialsId: 'k8s-pod-yaml', variable: 'POD_YAML')]) {
+                        writeFile file: 'pod-config.yaml', text: POD_YAML
+                    }
                 }
             }
         }
@@ -18,8 +21,7 @@ pipeline {
             agent {
                 kubernetes {
                     label 'k8s-agent'
-                    defaultContainer 'jnlp'
-                    yamlFile 'pod-config.yaml'
+                    yaml readFile('pod-config.yaml') // Load YAML file for the agent
                 }
             }
             steps {
@@ -35,8 +37,7 @@ pipeline {
             agent {
                 kubernetes {
                     label 'k8s-agent'
-                    defaultContainer 'kaniko'
-                    yamlFile 'pod-config.yaml'
+                    yaml readFile('pod-config.yaml') // Load YAML file for the agent
                 }
             }
             steps {
@@ -57,8 +58,7 @@ pipeline {
             agent {
                 kubernetes {
                     label 'k8s-agent'
-                    defaultContainer 'kaniko'
-                    yamlFile 'pod-config.yaml'
+                    yaml readFile('pod-config.yaml') // Load YAML file for the agent
                 }
             }
             steps {
