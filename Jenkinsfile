@@ -2,12 +2,11 @@ pipeline {
     agent {
         kubernetes {
             label 'k8s-agent'
-            yaml readFile('/run/secrets/kubernetes-yaml-credentials')
+            yaml env.KUBERNETES_YAML
         }
     }
     environment {
-        // Read the secret file content into an environment variable
-        KUBERNETES_YAML = credentials('kubernetes-yaml-credentials')
+        KUBERNETES_YAML = credentials('kubernetes-yaml-credentials') // Hidden parameter
         GITHUB_TOKEN = credentials('github-token1')
         IMAGE_TAG = 'unode-onboard-api'
         BUILD_TAG = "${env.BUILD_ID}"
@@ -51,9 +50,5 @@ pipeline {
                 }
             }
         }
-    }
-    // Add maskPasswords block to mask KUBERNETES_YAML in logs
-    options {
-        maskPasswords([env.KUBERNETES_YAML])
     }
 }
