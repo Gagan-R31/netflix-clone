@@ -2,61 +2,23 @@ pipeline {
     agent {
         kubernetes {
             label 'k8s-agent'
-            yaml '''
-            apiVersion: v1
-            kind: Pod
-            metadata:
-              labels:
-                some-label: some-label-value
-            spec:
-              containers:
-              - name: jnlp
-                image: jenkins/inbound-agent
-                args: ['$(JENKINS_SECRET)', '$(JENKINS_NAME)']
-              - name: kaniko
-                image: gaganr31/kaniko-go
-                command:
-                - /busybox/sh
-                tty: true
-                volumeMounts:
-                - name: kaniko-secret
-                  mountPath: /kaniko/.docker
-                - name: workspace-volume
-                  mountPath: /workspace
-              volumes:
-              - name: kaniko-secret
-                secret:
-                  secretName: kaniko-secret
-                  items:
-                  - key: .dockerconfigjson
-                    path: config.json
-              - name: workspace-volume
-                emptyDir: {}
-            '''
+            yaml env.KUBERNETES_YAML
         }
     }
     environment {
+        KUBERNETES_YAML = credentials('kubernetes-yaml-credentials') // Hidden parameter
         GITHUB_TOKEN = credentials('github-token1')
         IMAGE_TAG = 'unode-onboard-api'
-        SOURCE_BRANCH = "${env.CHANGE_BRANCH ?: env.GIT_BRANCH}"
-        DOCKERHUB_REPO = 'gaganr31/jenkins'
-    }
-    options {
-        maskPasswords()
+        BUILD_TAG = "${env.BUILD_ID}"
     }
     stages {
-        stage('Clone Repository and Get Commit SHA') {
+        stage('Clone Repository') {
             steps {
                 script {
-                    wrap([$class: 'MaskPasswordsBuildWrapper', varPasswordPairs: [[password: env.GITHUB_TOKEN, var: 'GITHUB_TOKEN']]]) {
-                        sh """
-                        echo "Cloning branch: ${env.SOURCE_BRANCH}"
-                        git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
-                        cd netflix-clone
-                        """
-                    }
-                    env.COMMIT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                    echo "Commit SHA: ${env.COMMIT_SHA}"
+                    sh '''
+                    git clone -b Test https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
+                    cd netflix-clone
+                    '''
                 }
             }
         }
@@ -68,6 +30,7 @@ pipeline {
                         cd netflix-clone
                         which go
                         go version
+                        go test -v ./...
                         '''
                     }
                 }
@@ -77,12 +40,12 @@ pipeline {
             steps {
                 container('kaniko') {
                     script {
-                        sh """
-                            cd netflix-clone
-                            /kaniko/executor --dockerfile=./Dockerfile \
-                                             --context=. \
-                                             --destination=${DOCKERHUB_REPO}:${IMAGE_TAG}-${env.COMMIT_SHA}
-                        """
+                        sh '''
+                        cd undode
+                        /kaniko/executor --dockerfile=${WORKSPACE}/your-repo/Dockerfile \
+                                         --context=${WORKSPACE}/your-repo \
+                                         --destination=${DOCKERHUB_REPO}:${IMAGE_TAG}-${BUILD_TAG}
+                        '''
                     }
                 }
             }
