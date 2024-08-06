@@ -36,18 +36,22 @@ pipeline {
         }
     }
     environment {
-        GITHUB_TOKEN = credentials('github-token1') // Jenkins credentials ID for GitHub token
-        IMAGE_TAG = 'unode-onboard-api' // Image tag, can be changed if needed
-        BUILD_TAG = "${env.BUILD_ID}" // Unique tag for each build
+        GITHUB_TOKEN = credentials('github-token')
+        IMAGE_TAG = 'internal'
+        SOURCE_BRANCH = "${env.CHANGE_BRANCH ?: env.GIT_BRANCH}"
+        DOCKERHUB_REPO = 'mohitini8'
     }
     stages {
-        stage('Clone Repository') {
+        stage('Clone Repository and Get Commit SHA') {
             steps {
                 script {
-                    sh '''
-                    git clone -b Test https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
-                    cd netflix-clone
-                    '''
+                    sh """
+                    echo "Cloning branch: ${env.SOURCE_BRANCH}"
+                    git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/unification-com/unode-onboard-api.git
+                    cd unode-onboard-api
+                    """
+                    env.COMMIT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    echo "Commit SHA: ${env.COMMIT_SHA}"
                 }
             }
         }
@@ -56,8 +60,7 @@ pipeline {
                 container('kaniko') {
                     script {
                         sh '''
-                        cd netflix-clone
-                        # Testing 
+                        cd unode-onboard-api
                         which go
                         go version
                         go test -v ./...
@@ -70,12 +73,12 @@ pipeline {
             steps {
                 container('kaniko') {
                     script {
-                        sh '''
-                        cd undode
-                        /kaniko/executor --dockerfile=${WORKSPACE}/your-repo/Dockerfile \
-                                         --context=${WORKSPACE}/your-repo \
-                                         --no-push
-                        '''
+                        sh """
+                            cd unode-onboard-api
+                            /kaniko/executor --dockerfile=./Dockerfile \
+                                             --context=. \
+                                             --destination=${DOCKERHUB_REPO}/${IMAGE_TAG}:${env.COMMIT_SHA}
+                        """
                     }
                 }
             }
