@@ -36,7 +36,7 @@ pipeline {
         }
     }
     environment {
-        GITHUB_TOKEN = credentials('github-token')
+        GITHUB_TOKEN = credentials('github-token1')
         IMAGE_TAG = 'internal'
         SOURCE_BRANCH = "${env.CHANGE_BRANCH ?: env.GIT_BRANCH}"
         DOCKERHUB_REPO = 'mohitini8'
@@ -47,7 +47,7 @@ pipeline {
                 script {
                     sh """
                     echo "Cloning branch: ${env.SOURCE_BRANCH}"
-                    git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/unification-com/unode-onboard-api.git
+                    git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
                     cd netflix-clone
                     """
                     env.COMMIT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
