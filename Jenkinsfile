@@ -48,7 +48,7 @@ pipeline {
                     sh """
                     echo "Cloning branch: ${env.SOURCE_BRANCH}"
                     git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/unification-com/unode-onboard-api.git
-                    cd unode-onboard-api
+                    cd netflix-clone
                     """
                     env.COMMIT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                     echo "Commit SHA: ${env.COMMIT_SHA}"
@@ -60,7 +60,7 @@ pipeline {
                 container('kaniko') {
                     script {
                         sh '''
-                        cd unode-onboard-api
+                        cd netflix-clone
                         which go
                         go version
                         go test -v ./...
@@ -74,10 +74,10 @@ pipeline {
                 container('kaniko') {
                     script {
                         sh """
-                            cd unode-onboard-api
+                            cd netflix-clone
                             /kaniko/executor --dockerfile=./Dockerfile \
                                              --context=. \
-                                             --destination=${DOCKERHUB_REPO}/${IMAGE_TAG}:${env.COMMIT_SHA}
+                                             --no-push
                         """
                     }
                 }
