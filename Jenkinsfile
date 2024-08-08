@@ -24,7 +24,7 @@ pipeline {
             - name: workspace-volume
               mountPath: /workspace
           - name: buildpack
-            image: gcr.io/buildpacks/builder:v1
+            image: buildpack-deps
             command:
             volumeMounts:
             - name: workspace-volume
