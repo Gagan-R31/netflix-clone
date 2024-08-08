@@ -26,12 +26,6 @@ pipeline {
           - name: buildpack
             image: gcr.io/buildpacks/builder:v1
             command:
-            - /bin/sh
-            - -c
-            - |
-              set -e
-              cd /workspace
-              pack build --path . --builder gcr.io/buildpacks/builder:v1 --publish
             volumeMounts:
             - name: workspace-volume
               mountPath: /workspace
