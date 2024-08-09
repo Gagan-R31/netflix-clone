@@ -42,18 +42,23 @@ pipeline {
         DOCKERHUB_REPO = 'mohitini8'
     }
     stages {
-        stage('Clone Repository and Get Custom Commit SHA') {
+        stage('Clone Repository and Get Commit SHA') {
             steps {
                 script {
+                    // Clone the repository
                     sh """
                     echo "Cloning branch: ${env.SOURCE_BRANCH}"
-                    git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
-                    cd netflix-clone
+                    git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/unification-com/unode-onboard-api.git
+                    cd unode-onboard-api
                     """
-                    // Retrieve the full commit ID and create a custom SHA
-                    def fullCommitID = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
-                    env.COMMIT_SHA = sh(script: "echo -n '${fullCommitID}' | sha256sum | cut -d ' ' -f 1", returnStdout: true).trim()
-                    echo "Commit SHA: ${env.COMMIT_SHA}"
+                    
+                    // Fetch the specific commit ID from the PR head
+                    def prCommitID = sh(script: "git rev-parse ${env.GIT_COMMIT}", returnStdout: true).trim()
+                    
+                    // Hash the specific commit ID
+                    env.COMMIT_SHA = sh(script: "echo -n '${prCommitID}' | sha256sum | cut -d ' ' -f 1", returnStdout: true).trim()
+                    
+                    echo "Custom Commit SHA: ${env.COMMIT_SHA}"
                 }
             }
         }
