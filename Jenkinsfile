@@ -48,8 +48,8 @@ pipeline {
                     // Clone the repository
                     sh """
                     echo "Cloning branch: ${env.SOURCE_BRANCH}"
-                    git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/unification-com/unode-onboard-api.git
-                    cd unode-onboard-api
+                    git clone -b ${env.SOURCE_BRANCH} https://${GITHUB_TOKEN}@github.com/Gagan-R31/netflix-clone.git
+                    cd netflix-clone
                     """
                     
                     // Fetch the specific commit ID from the PR head
